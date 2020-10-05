@@ -1,0 +1,27 @@
+{
+  "name": "omegga-minesweeper",
+  "version": "2.0.0",
+  "description": "Player minesweeper in brickadia",
+  "main": "omegga.main.js",
+  "scripts": {
+    "test": "omegga"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Meshiest/omegga-minesweeper.git"
+  },
+  "keywords": [
+    "omegga",
+    "plugin",
+    "brickadia"
+  ],
+  "author": "Meshiest/cake",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Meshiest/omegga-minesweeper/issues"
+  },
+  "homepage": "https://github.com/Meshiest/omegga-minesweeper#readme",
+  "dependencies": {
+    "brs-js": "^1.2.3"
+  }
+}
