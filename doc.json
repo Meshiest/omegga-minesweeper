@@ -1,0 +1,69 @@
+{
+  "name": "minesweeper",
+  "description": "Play and generate minesweeper games",
+  "author": "cake",
+  "configFormat": {
+    "authorized": [
+      "username"
+    ]
+  },
+  "commands": [
+    {
+      "name": "!ms:start",
+      "description": "Start a game of minesweeper",
+      "example": "!ms:start width:30 height:16 mines:130",
+      "args": [
+        {
+          "name": "size:#",
+          "description": "sets width and height of game (default: 10)",
+          "required": false
+        },
+        {
+          "name": "width:#",
+          "description": "sets width of game (default: 10)",
+          "required": false
+        },
+        {
+          "name": "height:#",
+          "description": "sets height of game (default: 10)",
+          "required": false
+        },
+        {
+          "name": "mines:#",
+          "description": "sets height of game (default: 15% of size)",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "!ms:mine",
+      "description": "Mine a tile in tile below the player in an active game",
+      "example": "!ms:mine",
+      "args": []
+    },
+    {
+      "name": "!ms:stats",
+      "description": "Get stats for the game below the player",
+      "example": "!ms:stats",
+      "args": []
+    },
+    {
+      "name": "!ms:clearall",
+      "description": "Clear all bricks and reset game data (config authorized only)",
+      "example": "!ms:clearall",
+      "args": []
+    },
+    {
+      "name": "!ms:trust",
+      "description": "Toggle trust of user to play on your active games",
+      "example": "!ms:trust Zeblote",
+      "args": [
+        {
+          "name": "username",
+          "description": "Username of target player",
+          "required": true
+        }
+      ]
+    }
+  ]
+}
