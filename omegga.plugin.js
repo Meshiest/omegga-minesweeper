@@ -6,13 +6,12 @@ const { ParseTool, WriteTool, moveBricks, studs } = require('./util.tool.js');
 const CooldownProvider = require('./util.cooldown.js');
 
 // determine which tileset to use
-const MINESIZE = 8; // 4 is also an option for uglier and smaller grid
+let MINESIZE = 8; // 4 is also an option for uglier and smaller grid
 const MINESAVE = __dirname + '/tileset.brs';
-
-const defaultTileset = new ParseTool(brs.read(fs.readFileSync(MINESAVE)));
+const MINESAVE_A5 = __dirname + '/tileset_a5.brs';
 
 // queries for tileset
-const TILESET_QUERIES = {
+const TILESET_QUERIES = () => ({
   tile: ({asset: 'PB_DefaultBrick', size: [MINESIZE*5, MINESIZE*5, 2], material: 'BMC_Metallic', color: 1}),
   mine: ({asset: 'PB_DefaultBrick', size: [MINESIZE*5, MINESIZE*5, 2], material: 'BMC_Metallic', color: 2}),
   x: ({asset: 'PB_DefaultBrick', size: [MINESIZE*5, MINESIZE*5, 2], material: 'BMC_Metallic', color: 3}),
@@ -28,13 +27,13 @@ const TILESET_QUERIES = {
   6: ({asset: 'PB_DefaultBrick', size: [MINESIZE*5, MINESIZE*5, 2], material: 'BMC_Hologram', color: 5}),
   7: ({asset: 'PB_DefaultBrick', size: [MINESIZE*5, MINESIZE*5, 2], material: 'BMC_Hologram', color: 6}),
   8: ({asset: 'PB_DefaultBrick', size: [MINESIZE*5, MINESIZE*5, 2], material: 'BMC_Hologram', color: 7}),
-};
+});
 
 // parse tiles helper func
-const parseTiles = tool => Object.fromEntries(Object.entries(TILESET_QUERIES).map(([i, q]) => {
+const parseTiles = tool => Object.fromEntries(Object.entries(TILESET_QUERIES()).map(([i, q]) => {
   const plate = tool.query(q)[0];
   return plate ? [i, moveBricks(tool.aboveBrick(plate), plate.position.map(v => -v))] : [i, null];
-}))
+}));
 
 // generate a save from a list of tiles ({tile: 'tile name', pos: [x, y, z]})
 const getTileSaveProvider = parser => {
@@ -51,7 +50,7 @@ const getTileSaveProvider = parser => {
 
     // add all the tiles to the save
     for (const {tile, pos: [x, y, z], owned} of grid) {
-      const bricks = moveBricks(tiles[tile], studs(x * MINESIZE, y * MINESIZE, z));
+      const bricks = moveBricks(tiles[tile], studs(x * MINESIZE, y * MINESIZE, (MINESIZE === 2 ? z/2 - 0.5: z)));
 
       if (owned)
         bricks.forEach(b => b.owner_index = 2);
@@ -60,13 +59,32 @@ const getTileSaveProvider = parser => {
     }
     return tool.write();
   };
-}
-
-const getTileSave = getTileSaveProvider(defaultTileset);
+};
 
 class Minesweeper {
-  constructor(omegga) {
+  constructor(omegga, config, _store) {
     this.omegga = omegga;
+    this.config = config;
+    this.setup = false;
+    MINESIZE = config['microbricks'] ? 2 : 8;
+  }
+
+  // only parse the tileset on the first request
+  getTileSave(...args) {
+    if (!this.setup) {
+      const tileset = new ParseTool(brs.read(fs.readFileSync(Omegga.version === 'a4' ? MINESAVE : MINESAVE_A5)));
+
+      this.getTileSave = getTileSaveProvider(tileset);
+      this.setup = true;
+    }
+
+    return this.getTileSave(...args);
+  }
+
+  // determine if a player is authorized
+  isAuthorized(name) {
+    return !this.config['host-only'] || Omegga.getPlayer(name).isHost() ||
+      this.config['authorized'].split(',').includes(name);
   }
 
   init() {
@@ -80,11 +98,12 @@ class Minesweeper {
     this.startCooldown = CooldownProvider(5000);
 
     const commands = {
-      start: (name, ...args) => this.startCooldown(name) && this.startGame(name, ...args),
-      mine: (name, ...args) => this.cooldown(name) && this.mineTile(name),
-      stats: (name, ...args) => this.cooldown(name) && this.getStats(name),
-      clearall: (name, ...args) => this.omegga.getPlayer(name).isHost() && this.clearBricks(),
-      trust: (name, ...args) => this.cooldown(name) && this.trustPlayer(name, ...args),
+      start: (name, ...args) => this.isAuthorized(name) && this.startCooldown(name) && this.startGame(name, ...args),
+      mine: name => this.isAuthorized(name) && this.cooldown(name) && this.mineTile(name),
+      stats: name => this.isAuthorized(name) && this.cooldown(name) && this.getStats(name),
+      clearall: name => (this.omegga.getPlayer(name).isHost() ||
+        this.config['authorized'].split(',').includes(name)) && this.clearBricks(),
+      trust: (name, ...args) => this.isAuthorized(name) && this.cooldown(name) && this.trustPlayer(name, ...args),
     };
 
     this.omegga
@@ -186,7 +205,7 @@ class Minesweeper {
     try {
       [x, y] = await this.omegga.getPlayer(name).getPosition();
     } catch (e) {
-      this.toOne(name, `"Could not find <b>${sanitize(name)}</>"`)
+      this.toOne(name, `"Could not find <b>${sanitize(name)}</>"`);
       return;
     }
 
@@ -207,11 +226,11 @@ class Minesweeper {
        top > m.bottom ||
        bottom < m.top)
     )) {
-      this.toOne(name, `"<b>${sanitize(name)}</> can't start a game here (overlap)"`)
+      this.toOne(name, `"<b>${sanitize(name)}</> can't start a game here (overlap)"`);
       return;
     }
 
-    this.toAll(`"<b>${sanitize(name)}</> starting at (${left},${top}) (${width}x${height} ${mines} mines = ${Math.round(mines/(width*height)*100)}%)"`)
+    this.toAll(`"<b>${sanitize(name)}</> starting at (${left},${top}) (${width}x${height} ${mines} mines = ${Math.round(mines/(width*height)*100)}%)"`);
 
     // create game object
     const game = {
@@ -239,7 +258,7 @@ class Minesweeper {
             revealed ++;
 
       // compare to total number of possible cells
-      return game.memoProgress = Math.min(revealed / (game.width * game.height - game.mines), 1);;
+      return game.memoProgress = Math.min(revealed / (game.width * game.height - game.mines), 1);
     };
 
     // create an empty 2d array
@@ -255,13 +274,13 @@ class Minesweeper {
 
     try {
       // load the board in
-      this.omegga.writeSaveData('mine_' + name, getTileSave(grid));
+      this.omegga.writeSaveData('mine_' + name, this.getTileSave(grid));
       this.omegga.loadBricks('mine_' + name, {quiet: !this.isA4()});
 
       // add the game the list of minesweepers
       global.minesweepers.push(game);
     } catch (e) {
-      Omegga.error('error starting minesweeper game for', name, e);
+      console.error('error starting minesweeper game for', name, e);
     }
   }
 
@@ -369,10 +388,10 @@ class Minesweeper {
     }
 
     // remove ones that were already generated
-    grid = grid.filter(({pos: [x, y, z]}) => x < 0 || y < 0 || !game.generated[x][y])
+    grid = grid.filter(({pos: [x, y, _z]}) => x < 0 || y < 0 || !game.generated[x][y]);
     if (game.inProgress)
-      grid.forEach(({pos: [x, y, z]}) => {
-        if(x >= 0 && y >= 0) game.generated[x][y] = 1
+      grid.forEach(({pos: [x, y, _z]}) => {
+        if(x >= 0 && y >= 0) game.generated[x][y] = 1;
       });
 
     // only win if the game is in progress and all the non-bomb cells have been reveal
@@ -386,12 +405,12 @@ class Minesweeper {
 
     // write to save and load bricks
     try {
-      this.omegga.writeSaveData('mine_' + name, getTileSave(grid
+      this.omegga.writeSaveData('mine_' + name, this.getTileSave(grid
         .map(({tile, pos: [x, y, z]}) => ({tile, pos: [x + game.left, y + game.top, z]}))
       ));
       this.omegga.loadBricks('mine_' + name, {quiet: !this.isA4()});
     } catch (e) {
-      Omegga.log('error loading revealed minesweeper tiles for', name, e);
+      console.error('error loading revealed minesweeper tiles for', name, e);
     }
 
     // announce win
@@ -462,7 +481,7 @@ class Minesweeper {
 
     // can't trust yourself
     if (player.name === name) {
-      return
+      return;
     }
 
 

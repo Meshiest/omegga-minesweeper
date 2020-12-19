@@ -27,8 +27,8 @@ const studs = (x, y, z) => [x * 10, y * 10, z * 4 + 2];
 
 // determine the center of mass for a group of bricks
 const centerOfMass = bricks => bricks
-    .reduce((a, b) => a.map((x, i) => x + b[i]), [0, 0, 0])
-    .map(p => Math.round(p / bricks.length));
+  .reduce((a, b) => a.map((x, i) => x + b[i]), [0, 0, 0])
+  .map(p => Math.round(p / bricks.length));
 
 // move a cluster of bricks
 const moveBricks = (bricks, shift) => bricks.map(b => {
@@ -55,13 +55,13 @@ class ParseTool {
   // query the save or a group of bricks for a subset
   query({asset='', size, rotation=-1, material='', id='', color, name=''}, bricks) {
     return (bricks || this.save.bricks).filter(b =>
-        (!size || eq(b.size, size)) &&
-        (typeof color === 'undefined' || eq(b.color, color)) &&
-        (!asset || b.asset_name_index === this.assets[asset]) &&
-        (!material || b.material_index === this.materials[material]) &&
-        (!id || b.owner_index === this.ids[id] + 1) &&
-        (!name || b.owner_index === this.names[name] + 1) &&
-        (rotation === -1 || b.rotation === rotation)
+      (!size || eq(b.size, size)) &&
+      (typeof color === 'undefined' || eq(b.color, color)) &&
+      (!asset || b.asset_name_index === this.assets[asset]) &&
+      (!material || b.material_index === this.materials[material]) &&
+      (!id || b.owner_index === this.ids[id] + 1) &&
+      (!name || b.owner_index === this.names[name] + 1) &&
+      (rotation === -1 || b.rotation === rotation)
     );
   }
 
@@ -71,7 +71,7 @@ class ParseTool {
 
     const min = [b.position[0] - size[0] - 2, b.position[1] - size[1] - 2, b.position[2] + 1];
     const max = [b.position[0] + size[0] + 2, b.position[1] + size[1] + 2, Infinity];
-    return this.save.bricks.filter(b => b.position.every((p, i) => p >= min[i] && p <= max[i]));
+    return this.save.bricks.filter(b => b.position.every((p, i) => p > min[i] && p < max[i]));
   }
 
   // detect all bricks between two bricks
@@ -95,7 +95,7 @@ class ParseTool {
 
     const min = [b.position[0] - size[0], b.position[1] - size[1], b.position[2] + 4];
     const max = [b.position[0] + size[0], b.position[1] + size[1], b.position[2] + 4];
-    return this.save.bricks.filter(b => b.position.every((p, i) => p >= min[i] && p <= max[i]));
+    return this.save.bricks.filter(b => b.position.every((p, i) => p > min[i] && p < max[i]));
   }
 }
 
