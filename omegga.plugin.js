@@ -127,6 +127,17 @@ class Minesweeper {
           commands[command](name, ...args);
         }
       });
+
+    return {
+      registeredCommands: [
+        'ms:start',
+        'ms:mine',
+        'ms:stats',
+        'ms:clearall',
+        'ms:trust',
+        'ms',
+      ],
+    };
   }
 
   stop() {
