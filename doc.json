@@ -3,15 +3,15 @@
   "description": "Play and generate minesweeper games",
   "author": "cake",
   "config": {
-    "host-only": {
-      "description": "Whether !ms commands are host only",
+   "only-authorized": {
+      "description": "Whether only authorized players can use !ms",
       "type": "boolean",
-      "default": false
+      "default": true
     },
-    "authorized": {
+    "authorized-users": {
       "description": "Comma separated list of authorized usernames who can use !ms commands + clearall",
-      "type": "string",
-      "default": ""
+      "type": "players",
+      "default": []
     },
     "microbricks": {
       "description": "Enable microbricks mode (a5 only)",

@@ -83,8 +83,8 @@ class Minesweeper {
 
   // determine if a player is authorized
   isAuthorized(name) {
-    return !this.config['host-only'] || Omegga.getPlayer(name).isHost() ||
-      this.config['authorized'].split(',').includes(name);
+    const player = Omegga.getPlayer(name);
+    return !this.config['only-authorized'] || player.isHost() || this.config['authorized-users'].some(p => player.id === p.id);
   }
 
   init() {
@@ -101,8 +101,11 @@ class Minesweeper {
       start: (name, ...args) => this.isAuthorized(name) && this.startCooldown(name) && this.startGame(name, ...args),
       mine: name => this.isAuthorized(name) && this.cooldown(name) && this.mineTile(name),
       stats: name => this.isAuthorized(name) && this.cooldown(name) && this.getStats(name),
-      clearall: name => (this.omegga.getPlayer(name).isHost() ||
-        this.config['authorized'].split(',').includes(name)) && this.clearBricks(),
+      clearall: name => {
+        const player = this.omegga.getPlayer(name);
+        if (player.isHost() || this.config['authorized-users'].some(p => player.id === p.id))
+          this.clearBricks();
+      },
       trust: (name, ...args) => this.isAuthorized(name) && this.cooldown(name) && this.trustPlayer(name, ...args),
     };
 

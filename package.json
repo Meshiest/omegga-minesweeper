@@ -1,6 +1,6 @@
 {
   "name": "omegga-minesweeper",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Player minesweeper in brickadia",
   "main": "omegga.main.js",
   "scripts": {
