@@ -4,6 +4,10 @@ A playable minesweeper plugin for [omegga](https://github.com/brickadia-communit
 
 ## Install
 
+Easy: `omegga install gh:Meshiest/minesweeper`
+
+Manual:
+
 * `git clone https://github.com/meshiest/omegga-minesweeper minesweeper` in `plugins` directory
 * `npm i` in `minesweeper` directory
 
